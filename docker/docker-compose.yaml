@@ -1,0 +1,51 @@
+version: '3.3'
+services:
+  nginx:
+    image: nginx:latest
+    container_name: concise-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${NGINX_CONF}:/etc/nginx/conf.d
+      - ${BACKEND_APP}:/var/www/backend
+      - ${NGINX_LOGS}:/var/log/nginx
+    links:
+      - php
+
+  php:
+    build: ./php
+    container_name: concise-php-fpm
+    volumes:
+      - ${BACKEND_APP}:/var/www/backend
+    links:
+      - db
+
+  db:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    container_name: concise-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_LOGIN}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ../databases:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: concise-adminer
+    ports:
+      - "8080:8080"
+
+  composer:
+    build: ./composer
+    container_name: concise-composer
+    volumes:
+      - ${BACKEND_APP}:/var/www
+    working_dir: /var/www
+    command: composer install
+    #command: composer install --ignore-platform-reqs
+    #command: composer create-project --prefer-dist yiisoft/yii2-app-basic ../backend
