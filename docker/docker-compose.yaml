@@ -50,3 +50,4 @@ services:
     command: composer install
     #command: composer install --ignore-platform-reqs
     #command: composer create-project --prefer-dist yiisoft/yii2-app-basic ../backend
+    #command: composer require --prefer-dist yiisoft/yii2-imagine
