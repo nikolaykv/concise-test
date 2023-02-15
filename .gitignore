@@ -44,3 +44,6 @@ databases/**/*
 docker/nginx/logs/**/*
 
 backend/concise.log
+backend/web/img.jpg
+backend/web/watermark.png
+backend/web/img-watermark.jpg
