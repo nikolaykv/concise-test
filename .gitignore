@@ -42,3 +42,5 @@ backend/.vagrant
 # other
 databases/**/*
 docker/nginx/logs/**/*
+
+backend/concise.log
