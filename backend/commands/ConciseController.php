@@ -2,6 +2,7 @@
 
 namespace app\commands;
 
+use app\controllers\ImagesController;
 use Yii;
 use yii\db\Exception;
 use yii\console\ExitCode;
@@ -68,5 +69,43 @@ class ConciseController extends Controller
 
         $this->stdout('Успешно' . "\n", BaseConsole::FG_GREEN);
         return ExitCode::OK;
+    }
+
+    public function actionMiniatures($sizes, $watermarked = false, $catalogOnly = true)
+    {
+
+        ImagesController::$common_behavior = false;
+
+        $sizesParts = preg_split("/,|x/", $sizes);
+
+        if (count($sizesParts) == 2) {
+
+            if ($catalogOnly === false) {
+                ImagesController::$join = false;
+            }
+
+
+            if ($watermarked) {
+
+                $miniatures = ImagesController::generateWatermarkedMiniature(
+                    '', ['width' => $sizesParts[0], 'height' => $sizesParts[1]]
+                );
+
+            } else {
+
+                $miniatures = ImagesController::generateMiniature(
+                    '', ['width' => $sizesParts[0], 'height' => $sizesParts[1]]
+                );
+
+            }
+            $this->stdout(count($miniatures) . "\n");
+            return ExitCode::OK;
+
+
+        } else {
+            $this->stdout('Вам необходимо указать и ширину и высоту с допустимыми разделителями!', BaseConsole::FG_RED);
+            return ExitCode::DATAERR;
+        }
+
     }
 }

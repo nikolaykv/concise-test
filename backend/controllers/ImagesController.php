@@ -10,6 +10,10 @@ use yii\web\Controller;
 
 class ImagesController extends Controller
 {
+
+    public static $join = true;
+    public static $common_behavior = true;
+
     /**
      * @return string
      */
@@ -20,11 +24,6 @@ class ImagesController extends Controller
         ]);
     }
 
-    /**
-     * @param $url
-     * @param $arr
-     * @return void
-     */
     protected static function consiseImageHandler($url, $arr)
     {
         try {
@@ -47,46 +46,74 @@ class ImagesController extends Controller
         }
     }
 
-    /**
-     * @param $url
-     * @param $arr
-     * @return false|string
-     */
+
     public static function generateMiniature($url, $arr)
     {
-        $path = \Yii::getAlias('@webroot/img.jpg');
+        $result = [];
 
-        self::consiseImageHandler($url, $arr);
+        $where = ['is_deleted' => '0'];
 
-        $row = (new Query())
-            ->select(['image'])
-            ->from('product')
-            ->where(['is_deleted' => '0', 'image' => $url])
-            ->one();
+        if (self::$common_behavior) {
+            self::consiseImageHandler($url, $arr);
+            $where[] = ['image' => $url];
+        }
 
-        Image::getImagine()->open($row['image'])
-            ->thumbnail(new Box($arr['width'], $arr['height']))
-            ->save($path, ['quality' => 90]);
+        $query = (new Query());
 
-        return $path;
+        if (self::$join) {
+
+            $where[] = ['product_image' => $url];
+            $rows = $query
+                ->select('product.image, store_product.product_image')
+                ->from('product')
+                ->innerJoin('store_product', 'product.id = store_product.product_id')
+                ->where($where)
+                ->all();
+        } else {
+            $rows = $query
+                ->select('image')
+                ->from('product')
+                ->where($where)
+                ->all();
+        }
+
+        foreach ($rows as $key => $row) {
+
+            $path = \Yii::getAlias('@webroot/img.jpg') . "_" . $key;
+
+            Image::getImagine()->open($row['image'])
+                ->thumbnail(new Box($arr['width'], $arr['height']))
+                ->save($path, ['quality' => 90]);
+
+            $result[] = $path;
+        }
+
+        return $result;
     }
 
-    /**
-     * @param $url
-     * @param $arr
-     * @return false|string
-     */
+
     public static function generateWatermarkedMiniature($url, $arr)
     {
-        $path = \Yii::getAlias('@webroot/img-watermark.jpg'); // представим что это файл есть
+        $result = [];
         $watermark = \Yii::getAlias('@webroot/watermark.png');
 
-        self::consiseImageHandler($url, $arr); // тут исключение
+        if (self::$common_behavior) {
+            self::consiseImageHandler($url, $arr);
+        }
 
-        $image = self::generateMiniature($url, $arr); // миниатюра
-        Image::watermark($image, $watermark)->save($path); // наложение на миниатюру
+        $images = self::generateMiniature($url, $arr);
 
-        return $path;
+        foreach ($images as $image) {
+
+            $path = \Yii::getAlias('@webroot/img-watermark.jpg');
+
+            Image::watermark($image, $watermark)->save($path);
+            $result[] = $path;
+
+        }
+
+        return $result;
     }
-    
+
+
 }
