@@ -23,35 +23,29 @@ class ImagesController extends Controller
     /**
      * @param $url
      * @param $arr
-     * @return false|string
+     * @return void
      */
     protected static function consiseImageHandler($url, $arr)
     {
-        $error = false;
-
-        switch (true) {
-            case !is_string($url):
-                $error = 'url изображения должен быть строкой!';
-                break;
-            case !strlen($url) > 0 || $url == null:
-                $error = 'url изображения не может быт пуст!';
-                break;
-            case !is_array($arr):
-                $error = 'Параметры ресайза нужно передать в массиве!';
-                break;
-            case !count($arr) == 2:
-                $error = 'В массив нужно передать ровно два параметра!';
-                break;
-            case array_key_exists('width', $arr) === false:
-                $error = 'Ширину ресайза картинки нужно передать под ключом width!';
-                break;
-            case array_key_exists('height', $arr) === false:
-                $error = 'Высоту ресайза картинки нужно передать под ключом height!';
-                break;
+        try {
+            switch (true) {
+                case !is_string($url):
+                    throw new \Exception('url изображения должен быть строкой!');
+                case !strlen($url) > 0 || $url == null:
+                    throw new \Exception('url изображения не может быт пуст!');
+                case !is_array($arr):
+                    throw new \Exception('Параметры ресайза нужно передать в массиве!');
+                case !count($arr) == 2:
+                    throw new \Exception('В массив нужно передать ровно два параметра!');
+                case array_key_exists('width', $arr) === false:
+                    throw new \Exception('Ширину ресайза картинки нужно передать под ключом width!');
+                case array_key_exists('height', $arr) === false:
+                    throw new \Exception('Высоту ресайза картинки нужно передать под ключом height!');
+            }
+        } catch (\Exception $exception) {
+            \Yii::error($exception->getMessage());
         }
-        return $error;
     }
-
 
     /**
      * @param $url
@@ -61,25 +55,21 @@ class ImagesController extends Controller
     public static function generateMiniature($url, $arr)
     {
         $path = \Yii::getAlias('@webroot/img.jpg');
-        $error = self::consiseImageHandler($url, $arr);
 
-        if ($error) {
-            $result = $error;
-        } else {
-            $row = (new Query())
-                ->select(['image'])
-                ->from('product')
-                ->where(['is_deleted' => '0', 'image' => $url])
-                ->one();
+        self::consiseImageHandler($url, $arr);
 
-            Image::getImagine()->open($row['image'])
-                ->thumbnail(new Box($arr['width'], $arr['height']))
-                ->save($path, ['quality' => 90]);
-            $result = $path;
-        }
-        return $result;
+        $row = (new Query())
+            ->select(['image'])
+            ->from('product')
+            ->where(['is_deleted' => '0', 'image' => $url])
+            ->one();
+
+        Image::getImagine()->open($row['image'])
+            ->thumbnail(new Box($arr['width'], $arr['height']))
+            ->save($path, ['quality' => 90]);
+
+        return $path;
     }
-
 
     /**
      * @param $url
@@ -88,23 +78,15 @@ class ImagesController extends Controller
      */
     public static function generateWatermarkedMiniature($url, $arr)
     {
-        $path = \Yii::getAlias('@webroot/img-watermark.jpg');
+        $path = \Yii::getAlias('@webroot/img-watermark.jpg'); // представим что это файл есть
         $watermark = \Yii::getAlias('@webroot/watermark.png');
 
-        $error = self::consiseImageHandler($url, $arr);
+        self::consiseImageHandler($url, $arr); // тут исключение
 
-        if ($error) {
-            $result = $error;
-        } else {
-            $image = self::generateMiniature($url, $arr);
+        $image = self::generateMiniature($url, $arr); // миниатюра
+        Image::watermark($image, $watermark)->save($path); // наложение на миниатюру
 
-            Image::watermark($image, $watermark)
-                ->save($path);
-
-            $result = $path;
-        }
-
-        return $result;
+        return $path;
     }
-
+    
 }
