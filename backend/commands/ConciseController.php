@@ -71,6 +71,14 @@ class ConciseController extends Controller
         return ExitCode::OK;
     }
 
+    /**
+     * Это действие сгенерирует миниатюры изображений для product, которые не удалены
+     *
+     * @param $sizes
+     * @param $watermarked
+     * @param $catalogOnly
+     * @return int Exit code
+     */
     public function actionMiniatures($sizes, $watermarked = false, $catalogOnly = true)
     {
 
@@ -84,26 +92,20 @@ class ConciseController extends Controller
                 ImagesController::$join = false;
             }
 
-
             if ($watermarked) {
-
                 $miniatures = ImagesController::generateWatermarkedMiniature(
                     '', ['width' => $sizesParts[0], 'height' => $sizesParts[1]]
                 );
-
             } else {
-
                 $miniatures = ImagesController::generateMiniature(
                     '', ['width' => $sizesParts[0], 'height' => $sizesParts[1]]
                 );
-
             }
-            $this->stdout(count($miniatures) . "\n");
+            $this->stdout("Успешно сгенерировано " . count($miniatures) . " миниатюр!\n", BaseConsole::FG_GREEN);
             return ExitCode::OK;
 
-
         } else {
-            $this->stdout('Вам необходимо указать и ширину и высоту с допустимыми разделителями!', BaseConsole::FG_RED);
+            $this->stdout("Вам необходимо указать и ширину и высоту с допустимыми разделителями!\n", BaseConsole::FG_RED);
             return ExitCode::DATAERR;
         }
 

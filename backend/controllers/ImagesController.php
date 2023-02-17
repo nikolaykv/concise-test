@@ -24,6 +24,11 @@ class ImagesController extends Controller
         ]);
     }
 
+    /**
+     * @param $url
+     * @param $arr
+     * @return void
+     */
     protected static function consiseImageHandler($url, $arr)
     {
         try {
@@ -46,44 +51,44 @@ class ImagesController extends Controller
         }
     }
 
-
+    /**
+     * @param $url
+     * @param $arr
+     * @return array
+     */
     public static function generateMiniature($url, $arr)
     {
         $result = [];
 
-        $where = ['is_deleted' => '0'];
-
         if (self::$common_behavior) {
             self::consiseImageHandler($url, $arr);
-            $where[] = ['image' => $url];
         }
 
         $query = (new Query());
 
         if (self::$join) {
 
-            $where[] = ['product_image' => $url];
             $rows = $query
                 ->select('product.image, store_product.product_image')
                 ->from('product')
                 ->innerJoin('store_product', 'product.id = store_product.product_id')
-                ->where($where)
+                ->where(['is_deleted' => '0'])
                 ->all();
         } else {
             $rows = $query
                 ->select('image')
                 ->from('product')
-                ->where($where)
+                ->where(['is_deleted' => '0'])
                 ->all();
         }
 
         foreach ($rows as $key => $row) {
 
-            $path = \Yii::getAlias('@webroot/img.jpg') . "_" . $key;
+            $path = \Yii::getAlias("@webroot/img_".$key.".jpg");
 
             Image::getImagine()->open($row['image'])
-                ->thumbnail(new Box($arr['width'], $arr['height']))
-                ->save($path, ['quality' => 90]);
+                ->thumbnail(new Box($arr['width'], $arr['height']));
+                //->save($path, ['quality' => 90]);
 
             $result[] = $path;
         }
@@ -91,7 +96,11 @@ class ImagesController extends Controller
         return $result;
     }
 
-
+    /**
+     * @param $url
+     * @param $arr
+     * @return array
+     */
     public static function generateWatermarkedMiniature($url, $arr)
     {
         $result = [];
@@ -103,17 +112,15 @@ class ImagesController extends Controller
 
         $images = self::generateMiniature($url, $arr);
 
-        foreach ($images as $image) {
+        foreach ($images as $key => $image) {
 
-            $path = \Yii::getAlias('@webroot/img-watermark.jpg');
+            $path = \Yii::getAlias("@webroot/img-watermark_".$key.".jpg");
 
-            Image::watermark($image, $watermark)->save($path);
+            Image::watermark($image, $watermark);//->save($path);
             $result[] = $path;
 
         }
 
         return $result;
     }
-
-
 }
